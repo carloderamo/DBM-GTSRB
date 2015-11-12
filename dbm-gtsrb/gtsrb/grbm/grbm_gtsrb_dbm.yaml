@@ -1,0 +1,39 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !pkl: "%(data_path)s/preprocessed_train.pkl",
+    model: !obj:pylearn2.models.dbm.DBM {
+        batch_size: %(batch_size)i,
+        niter: 10,
+        inference_procedure: !obj:pylearn2.models.dbm.WeightDoubling {},
+        visible_layer: !obj:pylearn2.models.dbm.GaussianVisLayer {
+            nvis: %(nvis)i,
+        },
+        hidden_layers: [
+            !obj:pylearn2.models.dbm.BinaryVectorMaxPool {
+                layer_name: 'h1',
+                detector_layer_dim: %(nhid)i,
+                pool_size: 1,
+                irange: 0.001,
+            }
+        ]
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: %(batch_size)i,
+        learning_rate: 0.005,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: 0.5,
+        },
+        monitoring_batches: 5,
+        monitoring_dataset: *train,
+        cost : !obj:pylearn2.costs.cost.SumOfCosts {
+            costs: [
+                !obj:pylearn2.costs.dbm.VariationalPCD {
+                    num_chains: 100,
+                    num_gibbs_steps: 5
+                },
+                !obj:pylearn2.costs.dbm.WeightDecay {
+                    coeffs: [ .0002 ],
+                },
+            ]
+        }
+    },
+}

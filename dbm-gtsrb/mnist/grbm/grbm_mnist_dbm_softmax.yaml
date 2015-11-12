@@ -1,0 +1,61 @@
+!obj:pylearn2.train.Train {
+    dataset: !obj:pylearn2.datasets.mnist.MNIST {
+        which_set: "train",
+        start: 0,
+        stop: %(train_stop)i
+    },
+    model: !obj:pylearn2.models.dbm.DBM {
+        batch_size: %(batch_size)i,
+        niter: 10,
+        inference_procedure: !obj:pylearn2.models.dbm.WeightDoubling {},
+        visible_layer: !obj:pylearn2.models.dbm.GaussianVisLayer {
+            nvis: 784,
+        },
+        hidden_layers: [
+            !obj:pylearn2.models.dbm.BinaryVectorMaxPool {
+                layer_name: 'h1',
+                detector_layer_dim: %(nhid)i,
+                pool_size: 1,
+                irange: 0.001,
+            },
+            !obj:pylearn2.models.dbm.Softmax {
+                layer_name: 'y',
+                irange: 0.001,
+                n_classes: 10
+            }
+        ]
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        learning_rate: 0.005,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: 0.5,
+        },
+        monitoring_dataset: {
+            'test': 
+                !obj:pylearn2.datasets.mnist.MNIST {
+                    which_set: 'test',
+                }
+        },
+        cost : !obj:pylearn2.costs.cost.SumOfCosts {
+            costs: [
+                !obj:pylearn2.costs.dbm.VariationalPCD {
+                    num_chains: 100,
+                    num_gibbs_steps: 5,
+                    supervised: 1,
+                },
+                !obj:pylearn2.costs.dbm.WeightDecay {
+                    coeffs: [ .0002, .0002 ],
+                },
+            ]
+        },  
+        termination_criterion: !obj:pylearn2.termination_criteria.EpochCounter { 
+            max_epochs: %(max_epochs)i
+        },
+        update_callbacks: [
+            !obj:pylearn2.training_algorithms.sgd.CustomizedLROverEpoch {
+            }
+        ]
+    },
+    save_path: "%(save_path)s/grbm_mnist_dbm_softmax.pkl",
+    save_freq: %(max_epochs)i
+}

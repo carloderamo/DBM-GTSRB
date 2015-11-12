@@ -1,0 +1,35 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.mnist.MNIST {
+        which_set: "train",
+        start: 0,
+        stop: %(train_stop)i
+    },
+    model: !obj:pylearn2.models.rbm.GaussianBinaryRBM {
+        nvis: 784,
+        nhid: %(nhid)i,
+        irange: 0.05,
+        energy_function_class: !obj:pylearn2.energy_functions.rbm_energy.grbm_type_1 {},
+        learn_sigma: True,
+        init_sigma: .4,
+        init_bias_hid: -2.,
+        mean_vis: False,
+        sigma_lr_scale: 1e-3
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        learning_rate: 1e-1,
+        batch_size: %(batch_size)i,
+        monitoring_batches: %(monitoring_batches)i,
+        monitoring_dataset: *train,
+        cost: !obj:pylearn2.costs.ebm_estimation.SMD {
+            corruptor: !obj:pylearn2.corruption.GaussianCorruptor {
+                    stdev: 0.4
+            },
+        },
+        termination_criterion : !obj:pylearn2.termination_criteria.EpochCounter {
+            max_epochs: %(max_epochs)i,
+        },
+    },
+    extensions: [!obj:pylearn2.training_algorithms.sgd.MonitorBasedLRAdjuster {}],
+    save_path: "%(save_path)s/grbm_mnist.pkl",
+    save_freq: %(max_epochs)i
+}

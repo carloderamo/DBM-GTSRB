@@ -1,0 +1,68 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !pkl: "%(data_path)s/preprocessed_train.pkl",
+    model: !obj:pylearn2.models.dbm.DBM {
+        batch_size: %(batch_size)i,
+        inference_procedure: !obj:pylearn2.models.dbm.SuperWeightDoubling {},
+        niter: 15,
+        visible_layer: !obj:pylearn2.models.dbm.GaussianVisLayer {
+            nvis: %(nvis)i,
+        },
+        hidden_layers: [
+            !obj:pylearn2.models.dbm.BinaryVectorMaxPool {
+                detector_layer_dim: %(detector_layer_0_dim)i,
+                pool_size: 1,
+                layer_name: 'h0',
+                irange: 0.05
+            },
+            !obj:pylearn2.models.dbm.BinaryVectorMaxPool {
+                detector_layer_dim: %(detector_layer_1_dim)i,
+                pool_size: 1,
+                irange: 0.05,
+                layer_name: 'h1',
+            },
+            !obj:pylearn2.models.dbm.Softmax {
+                irange: 0.05,
+                layer_name: 'y',
+                n_classes: 43
+            }
+        ]
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size : %(batch_size)i,
+        monitoring_dataset : {
+#            valid: !pkl: "%(data_path)s/preprocessed_valid.pkl",
+            test: !pkl: "%(data_path)s/preprocessed_test.pkl",
+        },
+        learning_rate: 1,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: 0.5,
+        },
+        cost: !obj:pylearn2.costs.cost.SumOfCosts {
+            costs: [
+                !obj:pylearn2.costs.dbm.MultiPrediction {
+                    supervised: 1,
+                    mask_gen: !obj:pylearn2.costs.dbm.MaskGen {
+                        drop_prob: 0.5,
+                        balance: 0,
+                        sync_channels: 0,
+                    }
+                }
+            ]
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.EpochCounter {
+            max_epochs: %(max_epochs)i
+        },
+    },
+    extensions: [
+        !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+            channel_name: "test_err",
+            save_path: "mpdbm_gtsrb.pkl",
+            store_best_model: True
+        },
+        !obj:pylearn2.training_algorithms.learning_rule.MomentumAdjustor {
+            start: 1,
+            saturate: 6,
+            final_momentum: 0.75
+        },
+    ],
+}

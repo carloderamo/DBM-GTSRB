@@ -1,0 +1,35 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.transformer_dataset.TransformerDataset {
+        raw: !pkl: "%(data_path)s/preprocessed_train.pkl",,
+        transformer: !pkl: "%(grbm_path)s/grbm_cifar.pkl"
+    },
+    model: !obj:pylearn2.models.rbm.RBM {
+        nvis : %(nvis)i,
+        nhid : %(nhid)i,
+        irange : 0.01,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        learning_rate : 0.05,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: 0.5,
+        },
+        batch_size : %(batch_size)i,
+        monitoring_batches : %(monitoring_batches)i,
+        monitoring_dataset : *train,
+        cost: !obj:pylearn2.costs.ebm_estimation.CDk {
+            nsteps : 1,
+        },
+        termination_criterion : !obj:pylearn2.termination_criteria.EpochCounter {
+            max_epochs: %(max_epochs)i,
+        },
+    },
+    extensions: [
+        !obj:pylearn2.training_algorithms.learning_rule.MomentumAdjustor {
+            start: 1,
+            saturate: 10,
+            final_momentum: 0.9,
+        },
+    ],
+    save_path: "%(save_path)s/dbm_cifar_l1.pkl",
+    save_freq: 1
+}

@@ -1,0 +1,48 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !pkl: "%(data_path)s/preprocessed_train.pkl",
+    model: !obj:pylearn2.models.rbm.GaussianBinaryRBM {
+        nvis: %(nvis)i,
+        nhid: %(nhid)i,
+        irange: 0.01,
+        energy_function_class: !obj:pylearn2.energy_functions.rbm_energy.grbm_type_1 {},
+        learn_sigma: False,
+        init_sigma: 0.4,
+        mean_vis : True,
+        init_bias_hid: -1.,
+        sigma_lr_scale: 1.e-4
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        learning_rate: 0.0001,
+#        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+#            init_momentum: 0.5,
+#        },
+        batch_size: %(batch_size)i,
+        monitoring_batches: %(monitoring_batches)i,
+        monitoring_dataset: *train,
+        cost: !obj:pylearn2.costs.ebm_estimation.CDk {
+            nsteps : 1,
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: %(max_epochs)i
+                }
+            ]
+        }
+    },
+    extensions: [
+        !obj:pylearn2.training_algorithms.sgd.MonitorBasedLRAdjuster {
+            channel_name: 'reconstruction_error'
+        },
+#        !obj:pylearn2.training_algorithms.learning_rule.MomentumAdjustor {
+#            start: 20,
+#            saturate: 25,
+#            final_momentum: 0.9,
+#        },
+    !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+            channel_name: 'reconstruction_error',
+            save_path: "%(save_path)s/grbm_gtsrb.pkl",
+            store_best_model: True
+        },
+    ]
+}

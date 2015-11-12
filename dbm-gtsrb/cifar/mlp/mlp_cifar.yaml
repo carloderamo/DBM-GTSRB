@@ -1,0 +1,45 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:pylearn2.datasets.transformer_dataset.TransformerDataset {
+        raw: !pkl: "%(data_path)s/preprocessed_train.pkl",
+        transformer: !pkl: "%(grbm_path)s/dbm_cifar_grbm.pkl"
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        batch_size: %(batch_size)i,
+        layers: [
+                 !obj:pylearn2.models.mlp.Sigmoid {
+                     layer_name: 'h0',
+                     dim: %(dim_h0)i,
+                     sparse_init: 15,
+                 },
+                 !obj:pylearn2.models.mlp.Sigmoid {
+                     layer_name: 'h1',
+                     dim: %(dim_h1)i,
+                     sparse_init: 15,
+                 },
+                 !obj:pylearn2.models.mlp.Softmax {
+                     layer_name: 'y',
+                     n_classes: 10,
+                     irange: 0.
+                 }
+                ],
+        nvis: %(nvis)i,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        learning_rate: 0.05,
+        monitoring_dataset: {
+            'test': 
+                !obj:pylearn2.datasets.transformer_dataset.TransformerDataset {
+                    raw: !pkl: "%(data_path)s/preprocessed_test.pkl",
+                    transformer: !pkl: "%(grbm_path)s/dbm_cifar_grbm.pkl"
+                },
+        },
+        cost: !obj:pylearn2.costs.mlp.Default {},
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: %(max_epochs)i
+                }
+            ]
+        }
+    }
+}

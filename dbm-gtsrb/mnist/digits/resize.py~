@@ -1,0 +1,11 @@
+from PIL import Image
+
+path = "/prova-8.jpg"
+size = [28, 28]
+name = "/prova-8.png"
+
+img = Image.open("/home/carlo/workspace/dbnsignsdetection_pl2/dbnsignsdetection_pl2/dbn_mnist/digits" + path)
+
+img = img.resize(size, Image.ANTIALIAS)
+
+img.save("/home/carlo/workspace/dbnsignsdetection_pl2/dbnsignsdetection_pl2/dbn_mnist/digits" + name)
